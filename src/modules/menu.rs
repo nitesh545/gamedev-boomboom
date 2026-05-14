@@ -1,5 +1,5 @@
+#![allow(dead_code)]
 use crate::modules::ui::{MainMenu, MenuAction, MenuButton};
-use bevy::app::AppExit;
 use bevy::prelude::*;
 
 pub fn setup_main_menu(mut commands: Commands) {
@@ -129,7 +129,6 @@ fn spawn_background_stars(commands: &mut Commands) {
         let x = (fastrand::f32() - 0.5) * 1600.0;
         let y = (fastrand::f32() - 0.5) * 1200.0;
         let size = 1.0 + fastrand::f32() * 3.0;
-        let speed: f32 = 20.0 + fastrand::f32() * 40.0;
 
         commands.spawn((
             Sprite {
@@ -142,7 +141,6 @@ fn spawn_background_stars(commands: &mut Commands) {
                 ..default()
             },
             Transform::from_translation(Vec3::new(x, y, -1.0)),
-            BackgroundStar { speed, spawn_y: y },
             MainMenu,
         ));
     }
@@ -153,7 +151,6 @@ fn spawn_floating_asteroids(commands: &mut Commands) {
         let x = (fastrand::f32() - 0.5) * 1200.0;
         let y = (fastrand::f32() - 0.5) * 800.0;
         let size = 30.0 + fastrand::f32() * 50.0;
-        let rotation_speed: f32 = (fastrand::f32() - 0.5) * 2.0;
 
         commands.spawn((
             Sprite {
@@ -162,13 +159,6 @@ fn spawn_floating_asteroids(commands: &mut Commands) {
                 ..default()
             },
             Transform::from_translation(Vec3::new(x, y, -0.5)),
-            FloatingAsteroid {
-                rotation_speed,
-                drift_speed: Vec2::new(
-                    (fastrand::f32() - 0.5) * 30.0,
-                    (fastrand::f32() - 0.5) * 30.0,
-                ),
-            },
             MainMenu,
         ));
     }
@@ -177,40 +167,5 @@ fn spawn_floating_asteroids(commands: &mut Commands) {
 pub fn cleanup_main_menu(mut commands: Commands, menu_query: Query<Entity, With<MainMenu>>) {
     for entity in menu_query.iter() {
         commands.entity(entity).despawn();
-    }
-}
-
-#[allow(clippy::type_complexity)]
-pub fn menu_button_system_with_audio(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &MenuButton),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut next_state: ResMut<NextState<GameState>>,
-    mut exit: EventWriter<AppExit>,
-) {
-    for (interaction, mut color, menu_button) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => match menu_button.action {
-                MenuAction::Play => {
-                    next_state.set(GameState::Playing);
-                }
-                MenuAction::Quit => {
-                    exit.write(AppExit::Success);
-                }
-            },
-            Interaction::Hovered => {
-                *color = match menu_button.action {
-                    MenuAction::Play => BackgroundColor(Color::srgb(0.3, 0.8, 0.3)),
-                    MenuAction::Quit => BackgroundColor(Color::srgb(0.8, 0.3, 0.3)),
-                };
-            }
-            Interaction::None => {
-                *color = match menu_button.action {
-                    MenuAction::Play => BackgroundColor(Color::srgb(0.2, 0.7, 0.2)),
-                    MenuAction::Quit => BackgroundColor(Color::srgb(0.7, 0.2, 0.2)),
-                };
-            }
-        }
     }
 }

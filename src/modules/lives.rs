@@ -1,6 +1,7 @@
 // =============================================================================
 // LIVES SYSTEM - Player Health Management
 // =============================================================================
+#![allow(dead_code)]
 use bevy::prelude::*;
 
 // Component for entities that have lives
@@ -35,7 +36,6 @@ impl Lives {
 // System to handle player taking damage
 pub fn player_damage_system(
     mut player_query: Query<(Entity, &mut Lives), With<crate::modules::player::Player>>,
-    mut _next_state: ResMut<NextState<GameState>>,
     mut _screen_shake: ResMut<crate::modules::camera::ScreenShake>,
 ) {
     for (_player_entity, mut _lives) in player_query.iter_mut() {
@@ -45,13 +45,12 @@ pub fn player_damage_system(
 }
 
 // System to check for game over
-pub fn check_game_over(
-    player_query: Query<&Lives, With<crate::modules::player::Player>>,
-    mut next_state: ResMut<NextState<GameState>>,
-) {
+pub fn check_game_over(player_query: Query<&Lives, With<crate::modules::player::Player>>) {
     if let Ok(lives) = player_query.single() {
         if !lives.is_alive() {
-            next_state.set(GameState::GameOver);
+            // TODO: implement this functionality.
+            println!("It's not implemented yet.");
+            unimplemented!();
         }
     }
 }

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use bevy::prelude::*;
 use std::time::Duration;
 
@@ -113,54 +114,54 @@ pub struct ExplosionParticle {
 use crate::modules::enemies::Enemy;
 use crate::modules::player::{Player, PlayerStats, PlayerTurret};
 
-pub fn spawn_explosion_particles_optimized(
-    mut commands: Commands,
-    mut collision_events: EventReader<CollisionEvent>,
-    bullet_query: Query<&Transform, (With<Bullet>, Without<Meteor>, Without<Enemy>)>,
-    meteor_query: Query<&Transform, (With<Meteor>, Without<Bullet>, Without<Enemy>)>,
-    enemy_query: Query<&Transform, (With<Enemy>, Without<Bullet>, Without<Meteor>)>,
-) {
-    for collision_event in collision_events.read() {
-        if let CollisionEvent::Started(h1, h2, _) = collision_event {
-            let entities = [*h1, *h2];
-            let mut explosion_pos = None;
-            let mut explosion_size = 1.0;
-
-            for entity in entities {
-                if bullet_query.contains(entity) {
-                    if let Ok(bullet_transform) = bullet_query.get(entity) {
-                        explosion_pos = Some(bullet_transform.translation.truncate());
-                    }
-                }
-                if meteor_query.contains(entity) {
-                    if let Ok(meteor_transform) = meteor_query.get(entity) {
-                        explosion_pos = Some(meteor_transform.translation.truncate());
-                        explosion_size = 2.0;
-                    }
-                }
-                if enemy_query.contains(entity) {
-                    if let Ok(enemy_transform) = enemy_query.get(entity) {
-                        explosion_pos = Some(enemy_transform.translation.truncate());
-                        explosion_size = 1.5;
-                    }
-                }
-            }
-
-            if let Some(pos) = explosion_pos {
-                spawn_explosion_at(&mut commands, pos, explosion_size);
-            }
-        }
-    }
-}
+//pub fn spawn_explosion_particles_optimized(
+//    mut commands: Commands,
+//    mut collision_events: EventReader<CollisionEvent>,
+//    bullet_query: Query<&Transform, (With<Bullet>, Without<Meteor>, Without<Enemy>)>,
+//    meteor_query: Query<&Transform, (With<Meteor>, Without<Bullet>, Without<Enemy>)>,
+//    enemy_query: Query<&Transform, (With<Enemy>, Without<Bullet>, Without<Meteor>)>,
+//) {
+//    for collision_event in collision_events.read() {
+//        if let CollisionEvent::Started(h1, h2, _) = collision_event {
+//            let entities = [*h1, *h2];
+//            let mut explosion_pos = None;
+//            let mut explosion_size = 1.0;
+//
+//            for entity in entities {
+//                if bullet_query.contains(entity) {
+//                    if let Ok(bullet_transform) = bullet_query.get(entity) {
+//                        explosion_pos = Some(bullet_transform.translation.truncate());
+//                    }
+//                }
+//                if meteor_query.contains(entity) {
+//                    if let Ok(meteor_transform) = meteor_query.get(entity) {
+//                        explosion_pos = Some(meteor_transform.translation.truncate());
+//                        explosion_size = 2.0;
+//                    }
+//                }
+//                if enemy_query.contains(entity) {
+//                    if let Ok(enemy_transform) = enemy_query.get(entity) {
+//                        explosion_pos = Some(enemy_transform.translation.truncate());
+//                        explosion_size = 1.5;
+//                    }
+//                }
+//            }
+//
+//            if let Some(pos) = explosion_pos {
+//                spawn_explosion_at(&mut commands, pos, explosion_size);
+//            }
+//        }
+//    }
+//}
 
 fn spawn_explosion_at(commands: &mut Commands, position: Vec2, size_multiplier: f32) {
-    let particle_count = (EXPLOSION_SPARK_COUNT as f32 * size_multiplier) as usize;
+    let particle_count = (10.0 * size_multiplier) as usize;
 
     // Spawn spark particles
     for _ in 0..particle_count {
-        let angle: f32 = fastrand::f32() * 2.0 * std::f32::consts::PI;
-        let speed: f32 = 100.0 + fastrand::f32() * 200.0 * size_multiplier;
-        let velocity = Vec2::new(angle.cos(), angle.sin()) * speed;
+        // let angle: f32 = fastrand::f32() * 2.0 * std::f32::consts::PI;
+        // let speed: f32 = 100.0 + fastrand::f32() * 200.0 * size_multiplier;
+        // let velocity = Vec2::new(angle.cos(), angle.sin()) * speed;
 
         commands.spawn((
             Sprite {
@@ -171,15 +172,16 @@ fn spawn_explosion_at(commands: &mut Commands, position: Vec2, size_multiplier: 
             Transform::from_translation(position.extend(990.0)),
             Particle::explosion_spark(),
             ParticleBehavior::explosion(),
-            Velocity(velocity),
+            // NOTE: use velocity when we have bevy_rapier2d crate imported
+            // Velocity(Velocity),
         ));
     }
 
     // Spawn smoke particles
     for _ in 0..(particle_count / 2) {
-        let angle = fastrand::f32() * 2.0 * std::f32::consts::PI;
-        let speed = 30.0 + fastrand::f32() * 60.0;
-        let velocity = Vec2::new(angle.cos(), angle.sin()) * speed;
+        // let angle = fastrand::f32() * 2.0 * std::f32::consts::PI;
+        // let speed = 30.0 + fastrand::f32() * 60.0;
+        // let velocity = Vec2::new(angle.cos(), angle.sin()) * speed;
 
         commands.spawn((
             Sprite {
@@ -190,7 +192,8 @@ fn spawn_explosion_at(commands: &mut Commands, position: Vec2, size_multiplier: 
             Transform::from_translation(position.extend(990.0)),
             Particle::explosion_smoke(),
             ParticleBehavior::explosion(),
-            Velocity(velocity),
+            // NOTE: use velocity when we have bevy_rapier2d crate imported
+            // Velocity(Velocity),
         ));
     }
 }
@@ -234,9 +237,9 @@ pub fn spawn_engine_particles_physics_based(
         ];
 
         for engine_pos in engine_positions {
-            let exhaust_direction = rear_world
-                + Vec2::new((fastrand::f32() - 0.5) * 0.4, (fastrand::f32() - 0.5) * 0.4);
-            let particle_speed = 120.0 + fastrand::f32() * 80.0;
+            // let exhaust_direction = rear_world
+            //     + Vec2::new((fastrand::f32() - 0.5) * 0.4, (fastrand::f32() - 0.5) * 0.4);
+            // let particle_speed = 120.0 + fastrand::f32() * 80.0;
 
             commands.spawn((
                 Sprite {
@@ -247,7 +250,7 @@ pub fn spawn_engine_particles_physics_based(
                 Transform::from_translation(engine_pos.extend(980.0)),
                 Particle::engine_flame(),
                 ParticleBehavior::engine_exhaust(),
-                Velocity(exhaust_direction * particle_speed),
+                // Velocity(exhaust_direction * particle_speed),
             ));
         }
     }
@@ -270,7 +273,7 @@ pub fn spawn_muzzle_flash_particles(
         let turret_direction = Vec2::new(turret.current_angle.cos(), turret.current_angle.sin());
         let muzzle_pos = turret_transform.translation.truncate() + turret_direction * 12.0;
 
-        for _ in 0..MUZZLE_FLASH_COUNT {
+        for _ in 0..10 {
             let flash_offset =
                 Vec2::new((fastrand::f32() - 0.5) * 8.0, (fastrand::f32() - 0.5) * 8.0);
 
@@ -293,56 +296,57 @@ pub fn spawn_muzzle_flash_particles(
                     drag: 0.8,
                     spin_speed: (fastrand::f32() - 0.5) * 20.0,
                 },
-                Velocity(turret_direction * (50.0 + fastrand::f32() * 100.0)),
+                // Velocity(turret_direction * (50.0 + fastrand::f32() * 100.0)),
             ));
         }
     }
 }
 
-pub fn spawn_impact_particles(
-    mut commands: Commands,
-    mut collision_events: EventReader<CollisionEvent>,
-    bullet_query: Query<&Transform, With<Bullet>>,
-    meteor_query: Query<(), With<Meteor>>,
-    enemy_query: Query<(), With<Enemy>>,
-) {
-    for collision_event in collision_events.read() {
-        if let CollisionEvent::Started(h1, h2, _) = collision_event {
-            let entities = [*h1, *h2];
-            let mut bullet_pos = None;
-            let mut hit_something = false;
-
-            for entity in entities {
-                if let Ok(bullet_transform) = bullet_query.get(entity) {
-                    bullet_pos = Some(bullet_transform.translation.truncate());
-                }
-                if meteor_query.contains(entity) || enemy_query.contains(entity) {
-                    hit_something = true;
-                }
-            }
-
-            if let (Some(pos), true) = (bullet_pos, hit_something) {
-                for _ in 0..6 {
-                    let angle = fastrand::f32() * 2.0 * std::f32::consts::PI;
-                    let speed = 80.0 + fastrand::f32() * 120.0;
-                    let velocity = Vec2::new(angle.cos(), angle.sin()) * speed;
-
-                    commands.spawn((
-                        Sprite {
-                            color: Color::srgb(1.0, 0.8, 0.4),
-                            custom_size: Some(Vec2::splat(3.0)),
-                            ..default()
-                        },
-                        Transform::from_translation(pos.extend(990.0)),
-                        Particle::debris_spark(),
-                        ParticleBehavior::explosion(),
-                        Velocity(velocity),
-                    ));
-                }
-            }
-        }
-    }
-}
+//pub fn spawn_impact_particles(
+//    mut commands: Commands,
+//    mut collision_events: EventReader<CollisionEvent>,
+//    bullet_query: Query<&Transform, With<Bullet>>,
+//    meteor_query: Query<(), With<Meteor>>,
+//    enemy_query: Query<(), With<Enemy>>,
+//) {
+//    for collision_event in collision_events.read() {
+//        if let CollisionEvent::Started(h1, h2, _) = collision_event {
+//            let entities = [*h1, *h2];
+//            let mut bullet_pos = None;
+//            let mut hit_something = false;
+//
+//            for entity in entities {
+//                if let Ok(bullet_transform) = bullet_query.get(entity) {
+//                    bullet_pos = Some(bullet_transform.translation.truncate());
+//                }
+//                if meteor_query.contains(entity) || enemy_query.contains(entity) {
+//                    hit_something = true;
+//                }
+//            }
+//
+//            if let (Some(pos), true) = (bullet_pos, hit_something) {
+//                for _ in 0..6 {
+//                    let angle = fastrand::f32() * 2.0 * std::f32::consts::PI;
+//                    let speed = 80.0 + fastrand::f32() * 120.0;
+//                    let velocity = Vec2::new(angle.cos(), angle.sin()) * speed;
+//
+//                    commands.spawn((
+//                        Sprite {
+//                            color: Color::srgb(1.0, 0.8, 0.4),
+//                            custom_size: Some(Vec2::splat(3.0)),
+//                            ..default()
+//                        },
+//                        Transform::from_translation(pos.extend(990.0)),
+//                        Particle::debris_spark(),
+//                        ParticleBehavior::explosion(),
+//                        // NOTE: use velocity when we have bevy_rapier2d crate imported
+//                        // Velocity(Velocity),
+//                    ));
+//                }
+//            }
+//        }
+//    }
+//}
 
 pub fn spawn_damage_particles(mut commands: Commands, enemy_query: Query<(&Transform, &Enemy)>) {
     for (transform, enemy) in enemy_query.iter() {
@@ -368,10 +372,10 @@ pub fn spawn_damage_particles(mut commands: Commands, enemy_query: Query<(&Trans
                     1.0,
                 ),
                 ParticleBehavior::floating_debris(),
-                Velocity(Vec2::new(
-                    (fastrand::f32() - 0.5) * 40.0,
-                    (fastrand::f32() - 0.5) * 40.0,
-                )),
+                //Velocity(Vec2::new(
+                //    (fastrand::f32() - 0.5) * 40.0,
+                //    (fastrand::f32() - 0.5) * 40.0,
+                //)),
             ));
         }
     }
@@ -407,10 +411,10 @@ pub fn spawn_shield_particles(
                     drag: 0.96,
                     spin_speed: 5.0,
                 },
-                Velocity(Vec2::new(
-                    (fastrand::f32() - 0.5) * 30.0,
-                    (fastrand::f32() - 0.5) * 30.0,
-                )),
+                //Velocity(Vec2::new(
+                //    (fastrand::f32() - 0.5) * 30.0,
+                //    (fastrand::f32() - 0.5) * 30.0,
+                //)),
             ));
         }
     }
@@ -448,10 +452,10 @@ pub fn spawn_ambient_particles(
                     drag: 0.999,
                     spin_speed: (fastrand::f32() - 0.5) * 1.0,
                 },
-                Velocity(Vec2::new(
-                    (fastrand::f32() - 0.5) * 20.0,
-                    (fastrand::f32() - 0.5) * 20.0,
-                )),
+                //Velocity(Vec2::new(
+                //    (fastrand::f32() - 0.5) * 20.0,
+                //    (fastrand::f32() - 0.5) * 20.0,
+                //)),
             ));
         }
     }
@@ -465,16 +469,13 @@ pub fn update_particles(
         &mut Transform,
         &mut Particle,
         &ParticleBehavior,
-        &mut Velocity,
     )>,
     time: Res<Time>,
 ) {
-    for (entity, mut sprite, mut transform, mut particle, behavior, mut velocity) in
-        particle_query.iter_mut()
-    {
+    for (entity, mut sprite, mut transform, mut particle, behavior) in particle_query.iter_mut() {
         particle.lifetime.tick(time.delta());
 
-        if particle.lifetime.finished() {
+        if particle.lifetime.is_finished() {
             commands.entity(entity).despawn();
             continue;
         }
@@ -497,9 +498,6 @@ pub fn update_particles(
         let current_size = particle.start_size * (1.0 - t) + particle.end_size * t;
         sprite.custom_size = Some(Vec2::splat(current_size));
 
-        velocity.0 += behavior.gravity * time.delta_secs();
-        velocity.0 *= behavior.drag;
-
         transform.rotation *= Quat::from_rotation_z(behavior.spin_speed * time.delta_secs());
     }
 }
@@ -516,7 +514,7 @@ pub fn cleanup_distant_particles(
             let particle_pos = transform.translation.truncate();
             let distance = (particle_pos - player_pos).length();
 
-            if distance > MAX_PARTICLE_DISTANCE {
+            if distance > 10.0 {
                 commands.entity(entity).despawn();
             }
         }
@@ -564,7 +562,7 @@ pub fn update_explosion_particles(
     for (entity, mut transform, mut particle) in particle_query.iter_mut() {
         particle.lifetime.tick(time.delta());
 
-        if particle.lifetime.finished() {
+        if particle.lifetime.is_finished() {
             commands.entity(entity).despawn();
             continue;
         }

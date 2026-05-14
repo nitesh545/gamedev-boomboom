@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 

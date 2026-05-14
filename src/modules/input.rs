@@ -1,14 +1,15 @@
+#![allow(dead_code)]
 use bevy::prelude::*;
 
 #[derive(Resource, Default)]
 pub struct MouseWorldPos(pub Vec2);
 
-use bevy::app::AppExit;
+// use bevy::app::AppExit;
 use bevy::window::{PrimaryWindow, WindowMode};
 
-pub fn escape_key_handler(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
+pub fn escape_key_handler(mut _commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
     if keyboard_input.just_pressed(KeyCode::Escape) {
-        commands.trigger(AppExit::Success);
+        //commands.trigger(AppExit::Success);
     }
 }
 

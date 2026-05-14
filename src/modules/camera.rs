@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::modules::enemies::Enemy;
 use crate::modules::player::Player;
 use bevy::camera::Exposure;
