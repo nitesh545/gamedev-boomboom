@@ -24,12 +24,6 @@ use bevy::prelude::*;
 
 mod modules;
 
-pub struct PlayerPlugin;
-
-impl Plugin for PlayerPlugin {
-    fn build(&self, _app: &mut App) {}
-}
-
 #[derive(Component)]
 pub struct Ground;
 
@@ -37,7 +31,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, load_ground)
-        .add_plugins(PlayerPlugin)
         .run();
 }
 
