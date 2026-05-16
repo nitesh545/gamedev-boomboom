@@ -19,6 +19,7 @@
 // use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use bevy_rapier2d::prelude::*;
 
 use crate::modules::player::Player;
 // use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
@@ -33,8 +34,10 @@ pub struct Ground;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugins(RapierDebugRenderPlugin::default())
         .add_systems(Startup, (load_ground, setup_player))
-        .add_systems(Update, move_player)
+        .add_systems(Update, (move_player, jump_mechanic))
         .run();
 }
 
@@ -57,6 +60,9 @@ pub fn setup_player(mut commands: Commands, asset_server: ResMut<AssetServer>) {
             ..Default::default()
         },
         Player,
+        RigidBody::KinematicVelocityBased,
+        Collider::cuboid(60.0, 85.0),
+        Velocity::linear(Vec2::splat(0.0)),
     ));
 }
 
@@ -107,4 +113,16 @@ fn move_player(
         new_player_position_y.clamp(down_bound, up_bound),
         1.0,
     );
+}
+
+// Jump mechanic - Player
+pub fn jump_mechanic(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut player_velocity: Query<&mut Velocity>,
+) {
+    if keyboard_input.pressed(KeyCode::Space) {
+        for mut vel in player_velocity.iter_mut() {
+            vel.linear = Vec2::new(0.0, 20.0);
+        }
+    }
 }
