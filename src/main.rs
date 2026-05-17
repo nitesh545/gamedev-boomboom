@@ -41,7 +41,7 @@ fn main() {
             Startup,
             (spawn_camera, spawn_light, load_ground_3d, setup_player),
         )
-        .add_systems(Update, (move_player, jump_mechanic))
+        .add_systems(Update, (move_player, jump_mechanic, dash_mechanic))
         .run();
 }
 
@@ -72,7 +72,7 @@ pub fn load_ground_3d(
         Mesh3d(meshes.add(Cuboid::new(100.0, 5.0, 100.0))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, -2.0, 0.0),
-        // RigidBody::KinematicPositionBased,
+        RigidBody::Fixed,
         Collider::cuboid(50.0, 2.5, 50.0),
     ));
 }
@@ -96,6 +96,7 @@ pub fn setup_player(
     ));
 }
 
+// GDB-1-player-movement
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut player_transform: Single<&mut Transform, With<Player>>,
@@ -136,6 +137,7 @@ fn move_player(
     );
 }
 
+// GDB-2-jump-mechanic
 // Jump mechanic - Player
 pub fn jump_mechanic(
     keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -144,6 +146,25 @@ pub fn jump_mechanic(
     if keyboard_input.pressed(KeyCode::Space) {
         for mut vel in player_velocity.iter_mut() {
             vel.linear = Vec3::new(0.0, 20.0, 0.0);
+        }
+    }
+}
+
+// GDB-3-ability-dash
+// Dash mechanic - Player
+// TODO: Ability is present but not complete
+// TODO: need to fix the direction to dash to
+pub fn dash_mechanic(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut player_velocity: Query<&mut Velocity>,
+    player_transform: Query<&Transform, With<Player>>,
+) {
+    let default_transform = &Transform::default();
+    let transform = player_transform.single().unwrap_or(default_transform);
+    if keyboard_input.pressed(KeyCode::KeyZ) {
+        for mut vel in player_velocity.iter_mut() {
+            let forward = transform.forward();
+            vel.linear = Vec3::new(forward.x * -100.0, -forward.y, forward.z * -100.0);
         }
     }
 }
