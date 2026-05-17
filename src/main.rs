@@ -17,9 +17,9 @@
 #![allow(clippy::suspicious)]
 
 // use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
+use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraPlugin};
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
-use bevy_rapier2d::prelude::*;
+use bevy_rapier3d::prelude::*;
 
 use crate::modules::player::Player;
 // use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
@@ -34,50 +34,76 @@ pub struct Ground;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugins(FreeCameraPlugin)
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
-        .add_systems(Startup, (load_ground, setup_player))
+        .add_systems(
+            Startup,
+            (spawn_camera, spawn_light, load_ground_3d, setup_player),
+        )
         .add_systems(Update, (move_player, jump_mechanic))
         .run();
 }
 
-pub fn load_ground(mut commands: Commands, asset_server: ResMut<AssetServer>) {
-    commands.spawn(Camera2d);
+pub fn spawn_camera(mut commands: Commands) {
     commands.spawn((
-        Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(0.5)),
-        Sprite {
-            image: asset_server.load("ground_proto1.png"),
-            ..Default::default()
-        },
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+        FreeCamera::default(),
     ));
 }
 
-pub fn setup_player(mut commands: Commands, asset_server: ResMut<AssetServer>) {
+pub fn spawn_light(mut commands: Commands) {
     commands.spawn((
-        Transform::from_xyz(0.0, 0.0, 1.0).with_scale(Vec3::splat(0.5)),
-        Sprite {
-            image: asset_server.load("player_test.png"),
+        DirectionalLight {
+            illuminance: 100000.0,
             ..Default::default()
         },
+        // Transform::from_xyz(4.0, 8.0, 4.0),
+    ));
+}
+
+pub fn load_ground_3d(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::new(100.0, 5.0, 100.0))),
+        MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
+        Transform::from_xyz(0.0, -2.0, 0.0),
+        // RigidBody::KinematicPositionBased,
+        Collider::cuboid(50.0, 2.5, 50.0),
+    ));
+}
+
+pub fn setup_player(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::new(0.5, 1.5, 0.5))),
+        MeshMaterial3d(materials.add(Color::srgb_u8(100, 0, 100))),
         Player,
-        RigidBody::KinematicVelocityBased,
-        Collider::cuboid(60.0, 85.0),
-        Velocity::linear(Vec2::splat(0.0)),
+        RigidBody::Dynamic,
+        Collider::cuboid(0.25, 0.75, 0.25),
+        Velocity::linear(Vec3::splat(0.0)),
+        Restitution {
+            coefficient: 1.0,
+            ..Default::default()
+        },
     ));
 }
 
 fn move_player(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut player_transform: Single<&mut Transform, With<Player>>,
-    windows: Query<&mut Window, With<PrimaryWindow>>,
     time: Res<Time>,
 ) {
-    let (width, height) = match windows.single() {
-        Ok(val) => (val.width(), val.height()),
-        Err(_error) => (1280.0, 720.0),
-    };
     let mut direction_x = 0.0;
-    let mut direction_y = 0.0;
+    let direction_y = 0.0;
+    let mut direction_z = 0.0;
 
     if keyboard_input.pressed(KeyCode::ArrowLeft) {
         direction_x -= 1.0;
@@ -88,11 +114,11 @@ fn move_player(
     }
 
     if keyboard_input.pressed(KeyCode::ArrowUp) {
-        direction_y += 1.0;
+        direction_z += 1.0;
     }
 
     if keyboard_input.pressed(KeyCode::ArrowDown) {
-        direction_y -= 1.0;
+        direction_z -= 1.0;
     }
 
     // Calculate the new horizontal paddle position based on player input
@@ -100,18 +126,13 @@ fn move_player(
         player_transform.translation.x + direction_x * 100.0 * time.delta_secs();
     let new_player_position_y: f32 =
         player_transform.translation.y + direction_y * 100.0 * time.delta_secs();
-
-    // Update the paddle position,
-    // making sure it doesn't cause the paddle to leave the arena
-    let left_bound = -(width / 2.0);
-    let right_bound = width / 2.0;
-    let down_bound = -(height / 2.0);
-    let up_bound = height / 2.0;
+    let new_player_position_z: f32 =
+        player_transform.translation.z + direction_z * 100.0 * time.delta_secs();
 
     player_transform.translation = Vec3::new(
-        new_player_position_x.clamp(left_bound, right_bound),
-        new_player_position_y.clamp(down_bound, up_bound),
-        1.0,
+        new_player_position_x,
+        new_player_position_y,
+        new_player_position_z,
     );
 }
 
@@ -122,7 +143,7 @@ pub fn jump_mechanic(
 ) {
     if keyboard_input.pressed(KeyCode::Space) {
         for mut vel in player_velocity.iter_mut() {
-            vel.linear = Vec2::new(0.0, 20.0);
+            vel.linear = Vec3::new(0.0, 20.0, 0.0);
         }
     }
 }
