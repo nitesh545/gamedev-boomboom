@@ -32,6 +32,12 @@ mod modules;
 #[derive(Component)]
 pub struct Ground;
 
+#[derive(Component)]
+pub struct Bomb;
+
+#[derive(Component)]
+pub struct ExplodeTimer(Timer);
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -44,7 +50,16 @@ fn main() {
             Startup,
             (spawn_camera, spawn_light, load_ground_3d, setup_player),
         )
-        .add_systems(Update, (move_player, jump_mechanic, dash_mechanic))
+        .add_systems(
+            Update,
+            (
+                move_player,
+                jump_mechanic,
+                dash_mechanic,
+                spawn_bomb,
+                bomb_explode,
+            ),
+        )
         .run();
 }
 
@@ -127,11 +142,11 @@ fn move_player(
 
     // Calculate the new horizontal paddle position based on player input
     let new_player_position_x: f32 =
-        player_transform.translation.x + direction_x * 100.0 * time.delta_secs();
+        player_transform.translation.x + direction_x * 25.0 * time.delta_secs();
     let new_player_position_y: f32 =
-        player_transform.translation.y + direction_y * 100.0 * time.delta_secs();
+        player_transform.translation.y + direction_y * 25.0 * time.delta_secs();
     let new_player_position_z: f32 =
-        player_transform.translation.z + direction_z * 100.0 * time.delta_secs();
+        player_transform.translation.z + direction_z * 25.0 * time.delta_secs();
 
     player_transform.translation = Vec3::new(
         new_player_position_x,
@@ -168,6 +183,46 @@ pub fn dash_mechanic(
         for mut vel in player_velocity.iter_mut() {
             let forward = transform.forward();
             vel.linear = Vec3::new(forward.x * -100.0, -forward.y, forward.z * -100.0);
+        }
+    }
+}
+
+// GDB-3-bomb-placement-and-explosion
+// Bomb placement & Explosion - Player
+
+// Part-1: Bomb Placement
+pub fn spawn_bomb(
+    mut command: Commands,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    player_transform: Query<&Transform, With<Player>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let default_transform = &Transform::default();
+    let transform = player_transform.single().unwrap_or(default_transform);
+    if keyboard_input.just_pressed(KeyCode::KeyB) {
+        command.spawn((
+            Transform::from(transform.to_owned()),
+            Mesh3d(meshes.add(Sphere::new(0.25))),
+            MeshMaterial3d(materials.add(Color::srgb_u8(0, 100, 0))),
+            Bomb,
+            RigidBody::KinematicPositionBased,
+            Collider::ball(2.0),
+            Sensor,
+            ExplodeTimer(Timer::from_seconds(2.0, TimerMode::Once)),
+        ));
+    }
+}
+
+// Part-2: Explosion
+pub fn bomb_explode(
+    mut command: Commands,
+    time: Res<Time>,
+    mut bomb: Query<(Entity, &mut ExplodeTimer), With<Bomb>>,
+) {
+    for (entity, mut timer) in bomb.iter_mut() {
+        if timer.0.tick(time.delta()).just_finished() {
+            command.entity(entity).despawn();
         }
     }
 }
