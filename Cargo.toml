@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.18.1", features = ["dynamic_linking", "free_camera"] }
+bevy-inspector-egui = "0.36.0"
 bevy_rapier3d = "0.34.0"
 fastrand = "2.4.1"
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
