@@ -16,13 +16,17 @@
 // Suspicious code patterns
 #![allow(clippy::suspicious)]
 
+use std::time::Duration;
+
 // use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraPlugin};
 use bevy::prelude::*;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use bevy_rapier3d::prelude::*;
 
+use crate::modules::enemies::{Enemy, EnemyBehavior, EnemyType};
 use crate::modules::player::Player;
+use crate::modules::timers::EnemySpawnTimer;
 // use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 // use std::time::Duration;
 // use vleue_kinetoscope::AnimatedImagePlugin;
@@ -46,9 +50,14 @@ fn main() {
         .add_plugins(FreeCameraPlugin)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
+        .insert_resource(EnemySpawnTimer::default())
         .add_systems(
             Startup,
             (spawn_camera, spawn_light, load_ground_3d, setup_player),
+        )
+        .add_systems(
+            Update,
+            (spawn_enemies, give_enemy_a_body, enemy_ai_behavior),
         )
         .add_systems(
             Update,
@@ -87,11 +96,11 @@ pub fn load_ground_3d(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(100.0, 5.0, 100.0))),
+        Mesh3d(meshes.add(Cuboid::new(10000.0, 5.0, 10000.0))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, -2.0, 0.0),
         RigidBody::Fixed,
-        Collider::cuboid(50.0, 2.5, 50.0),
+        Collider::cuboid(500.0, 2.5, 500.0),
     ));
 }
 
@@ -133,11 +142,11 @@ fn move_player(
     }
 
     if keyboard_input.pressed(KeyCode::ArrowUp) {
-        direction_z += 1.0;
+        direction_z -= 1.0;
     }
 
     if keyboard_input.pressed(KeyCode::ArrowDown) {
-        direction_z -= 1.0;
+        direction_z += 1.0;
     }
 
     // Calculate the new horizontal paddle position based on player input
@@ -223,6 +232,143 @@ pub fn bomb_explode(
     for (entity, mut timer) in bomb.iter_mut() {
         if timer.0.tick(time.delta()).just_finished() {
             command.entity(entity).despawn();
+        }
+    }
+}
+
+// GDB-5-basic-enemy-ai
+// basic enemy ai - move around, follow player on detection, die when the time comes
+pub fn spawn_enemies(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut spawn_timer: ResMut<EnemySpawnTimer>,
+    player_query: Query<&Transform, With<Player>>,
+) {
+    spawn_timer.timer.tick(time.delta());
+
+    if spawn_timer.timer.just_finished() {
+        if let Ok(player_transform) = player_query.single() {
+            let player_pos = player_transform.translation;
+            spawn_timer.wave_intensity += 0.1;
+            let num_enemies = (spawn_timer.wave_intensity as usize).min(4);
+
+            for _ in 0..num_enemies {
+                spawn_single_enemy(&mut commands, player_pos, spawn_timer.wave_intensity);
+            }
+        }
+    }
+}
+
+fn spawn_single_enemy(commands: &mut Commands, player_pos: Vec3, intensity: f32) {
+    let angle = fastrand::f32() * 2.0 * std::f32::consts::PI;
+    let distance = 50.0 + fastrand::f32() * 1.0;
+    let spawn_pos: Vec3 =
+        player_pos + Vec3::new(angle.cos() * distance, 10.0, angle.sin() * distance);
+
+    let enemy_types = [EnemyType::Chaser, EnemyType::Flanker, EnemyType::Dasher];
+    let enemy_type = enemy_types[fastrand::usize(0..enemy_types.len())];
+
+    let (size, speed, health) = match enemy_type {
+        EnemyType::Chaser => (20.0, 120.0, 1),
+        EnemyType::Flanker => (16.0, 80.0, 2),
+        EnemyType::Dasher => (14.0, 60.0, 1),
+    };
+
+    commands.spawn((
+        Transform::from_translation(spawn_pos),
+        Enemy {
+            enemy_type,
+            speed: speed * (1.0 + intensity * 0.1),
+            health,
+        },
+        EnemyBehavior::default(),
+        RigidBody::Dynamic,
+        Collider::ball(size / 10.0),
+        Velocity::linear(Vec3::splat(0.0)),
+        LockedAxes::ROTATION_LOCKED,
+        ActiveEvents::COLLISION_EVENTS,
+    ));
+}
+
+pub fn give_enemy_a_body(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut enemies: Query<Entity, With<Enemy>>,
+) {
+    let enemy_types = [EnemyType::Chaser, EnemyType::Flanker, EnemyType::Dasher];
+    let enemy_type = enemy_types[fastrand::usize(0..enemy_types.len())];
+    let color = match enemy_type {
+        EnemyType::Chaser => Color::srgb(1.0, 0.2, 0.2),
+        EnemyType::Flanker => Color::srgb(0.8, 0.2, 0.8),
+        EnemyType::Dasher => Color::srgb(0.2, 0.8, 1.0),
+    };
+    for enemy in enemies.iter_mut() {
+        let mut enemy_entity = commands.entity(enemy);
+        enemy_entity.insert((
+            Mesh3d(meshes.add(Sphere::new(2.0))),
+            MeshMaterial3d(materials.add(color)),
+        ));
+    }
+}
+
+pub fn enemy_ai_behavior(
+    mut enemy_query: Query<(&mut Velocity, &mut EnemyBehavior, &Enemy, &Transform)>,
+    player_query: Query<&Transform, (With<Player>, Without<Enemy>)>,
+    time: Res<Time>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+    let player_pos = player_transform.translation;
+
+    for (mut velocity, mut behavior, enemy, transform) in enemy_query.iter_mut() {
+        let enemy_pos = transform.translation;
+        let to_player = player_pos - enemy_pos;
+        let distance = to_player.length();
+
+        behavior.behavior_timer.tick(time.delta());
+        behavior.dash_cooldown.tick(time.delta());
+
+        match enemy.enemy_type {
+            EnemyType::Chaser => {
+                if distance > 5.0 {
+                    let direction = to_player.normalize();
+                    velocity.linear = direction * enemy.speed;
+                } else {
+                    velocity.linear = Vec3::ZERO;
+                }
+            }
+            EnemyType::Flanker => {
+                if behavior.behavior_timer.just_finished() {
+                    behavior.target_angle = fastrand::f32() * 2.0 * std::f32::consts::PI;
+                }
+
+                if distance > 80.0 {
+                    let direction = to_player.normalize();
+                    velocity.linear = direction * enemy.speed;
+                } else if distance < 40.0 {
+                    let direction = -to_player.normalize();
+                    velocity.linear = direction * enemy.speed;
+                } else {
+                    let perpendicular = Vec3::new(-to_player.y, 0.0, to_player.x).normalize();
+                    let circle_direction = perpendicular * behavior.target_angle.cos()
+                        + to_player.normalize() * behavior.target_angle.sin() * 0.3;
+                    velocity.linear = circle_direction * enemy.speed * 0.8;
+                }
+            }
+            EnemyType::Dasher => {
+                if distance > 150.0 {
+                    let direction = to_player.normalize();
+                    velocity.linear = direction * enemy.speed * 0.5;
+                } else if distance > 50.0 && behavior.dash_cooldown.just_finished() {
+                    let direction = to_player.normalize();
+                    velocity.linear = direction * enemy.speed * 3.0;
+                    behavior.dash_cooldown = Timer::new(Duration::from_secs(3), TimerMode::Once);
+                } else {
+                    velocity.linear *= 0.8;
+                }
+            }
         }
     }
 }
