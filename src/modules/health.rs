@@ -134,6 +134,8 @@ pub struct HealthBarFill;
 // System to spawn health bar when player spawns
 pub fn spawn_health_bar(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     player_query: Query<
         Entity,
         (
@@ -142,16 +144,21 @@ pub fn spawn_health_bar(
         ),
     >,
 ) {
+    dbg!("Inside spawn_health_bar");
+    dbg!(player_query.iter().count());
     for player_entity in player_query.iter() {
+        dbg!("player_entity found");
         // Health bar background (dark)
         let _health_bar_bg = commands
             .spawn((
-                Sprite {
-                    color: Color::srgb(0.2, 0.2, 0.2),
-                    custom_size: Some(Vec2::new(60.0, 8.0)),
-                    ..default()
-                },
-                Transform::from_xyz(0.0, 40.0, 999.5),
+                //Sprite {
+                //    color: Color::srgb(0.2, 0.2, 0.2),
+                //    custom_size: Some(Vec2::new(60.0, 8.0)),
+                //    ..default()
+                //},
+                Mesh3d(meshes.add(Cuboid::new(60.0, 1.0, 8.0))),
+                MeshMaterial3d(materials.add(Color::srgb(0.2, 0.2, 0.2))),
+                Transform::from_xyz(1., 1., 1.),
                 HealthBar {
                     owner: player_entity,
                 },
@@ -159,20 +166,20 @@ pub fn spawn_health_bar(
             .id();
 
         // Health bar fill (green/red)
-        let _health_bar_fill = commands
-            .spawn((
-                Sprite {
-                    color: Color::srgb(0.2, 0.8, 0.2),       // Green when healthy
-                    custom_size: Some(Vec2::new(56.0, 6.0)), // Slightly smaller than bg
-                    ..default()
-                },
-                Transform::from_xyz(0.0, 40.0, 999.8), // Above background
-                HealthBarFill,
-                HealthBar {
-                    owner: player_entity,
-                },
-            ))
-            .id();
+        commands.spawn((
+            //Sprite {
+            //    color: Color::srgb(0.2, 0.8, 0.2),       // Green when healthy
+            //    custom_size: Some(Vec2::new(56.0, 6.0)), // Slightly smaller than bg
+            //    ..default()
+            //},
+            Mesh3d(meshes.add(Cuboid::new(56.0, 1.0, 6.0))),
+            MeshMaterial3d(materials.add(Color::srgb(0.2, 0.8, 0.2))),
+            Transform::from_xyz(1.0, 1.2, 1.0), // Above background
+            HealthBarFill,
+            HealthBar {
+                owner: player_entity,
+            },
+        ));
 
         println!("Health bar spawned for player {:?}", player_entity);
     }

@@ -1334,6 +1334,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7a9329e8dc4e01ced480eeec4902e6d7cb56e56ec37f6fbc4323e5c937290a7"
 
 [[package]]
+name = "bevy_rapier2d"
+version = "0.34.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4565a9a993030725a654623485963f535a8568cb5982a8928d5fcf1a5aeda61f"
+dependencies = [
+ "bevy",
+ "bitflags 2.11.1",
+ "log",
+ "nalgebra",
+ "rapier2d",
+]
+
+[[package]]
 name = "bevy_rapier3d"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1907,9 +1920,11 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
+ "bevy_rapier2d",
  "bevy_rapier3d",
  "fastrand",
  "log",
+ "vleue_kinetoscope",
 ]
 
 [[package]]
@@ -2062,6 +2077,12 @@ dependencies = [
  "termcolor",
  "unicode-width",
 ]
+
+[[package]]
+name = "color_quant"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "combine"
@@ -2850,6 +2871,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gif"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee8cfcc411d9adbbaba82fb72661cc1bcca13e8bba98b364e62b2dba8f960159"
+dependencies = [
+ "color_quant",
+ "weezl",
+]
+
+[[package]]
 name = "gilrs"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3279,10 +3310,23 @@ checksum = "85ab80394333c02fe689eaf900ab500fbd0c2213da414687ebf995a65d5a6104"
 dependencies = [
  "bytemuck",
  "byteorder-lite",
+ "color_quant",
+ "gif",
+ "image-webp",
  "moxcms",
  "num-traits",
  "png",
  "tiff",
+]
+
+[[package]]
+name = "image-webp"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "525e9ff3e1a4be2fbea1fdf0e98686a6d98b4d8f937e1bf7402245af1909e8c3"
+dependencies = [
+ "byteorder-lite",
+ "quick-error",
 ]
 
 [[package]]
@@ -4381,6 +4425,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "parry2d"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61cb992a61782917b0876f313fceec5f50470fcf8b0e59865db816ff68cd6287"
+dependencies = [
+ "approx",
+ "arrayvec",
+ "bitflags 2.11.1",
+ "downcast-rs 2.0.2",
+ "either",
+ "ena",
+ "foldhash 0.2.0",
+ "glamx",
+ "hashbrown 0.16.1",
+ "log",
+ "num-derive",
+ "num-traits",
+ "ordered-float",
+ "simba",
+ "slab",
+ "smallvec",
+ "spade",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "parry3d"
 version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4693,6 +4763,33 @@ name = "rangemap"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "973443cf09a9c8656b574a866ab68dfa19f0867d0340648c7d2f6a71b8a8ea68"
+
+[[package]]
+name = "rapier2d"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73edcbebd2c2a9eb0041e40b046b5136da32990fcd2ac76b9414ebff45908e18"
+dependencies = [
+ "approx",
+ "arrayvec",
+ "bit-vec",
+ "bitflags 2.11.1",
+ "downcast-rs 2.0.2",
+ "glamx",
+ "log",
+ "nalgebra",
+ "num-derive",
+ "num-traits",
+ "ordered-float",
+ "parry2d",
+ "profiling",
+ "rustc-hash 2.1.2",
+ "simba",
+ "static_assertions",
+ "thiserror 2.0.18",
+ "vec_map",
+ "wide",
+]
 
 [[package]]
 name = "rapier3d"
@@ -5642,6 +5739,27 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "vleue_kinetoscope"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75741243b5eb35e59c8f128bc1cceff055c70abb911e2fcb73ff5f0ad1f7d24f"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_ecs",
+ "bevy_image",
+ "bevy_reflect",
+ "bevy_sprite",
+ "bevy_tasks",
+ "bevy_time",
+ "crossbeam-channel",
+ "image",
+ "log",
+ "smallvec",
+ "thiserror 1.0.69",
+]
 
 [[package]]
 name = "walkdir"
