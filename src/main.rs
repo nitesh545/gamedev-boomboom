@@ -20,16 +20,16 @@ use std::time::Duration;
 
 // use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraPlugin};
-use bevy::image::ImageSamplerDescriptor;
+use bevy::image::{ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor};
 use bevy::prelude::*;
 use bevy::window::WindowMode;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use bevy_rapier2d::prelude::*;
 
+use crate::modules::Health;
 use crate::modules::enemies::{Enemy, EnemyBehavior, EnemyType};
 use crate::modules::player::Player;
 use crate::modules::timers::EnemySpawnTimer;
-use crate::modules::{Health, HealthBar, HealthBarFill};
 // use bevy::image::{ImageFilterMode, ImageSamplerDescriptor};
 // use std::time::Duration;
 use vleue_kinetoscope::{AnimatedImageController, AnimatedImagePlugin};
@@ -207,6 +207,7 @@ pub fn spawn_background(mut commands: Commands, asset_server: Res<AssetServer>) 
     ));
 }
 
+#[allow(dead_code)]
 fn spawn_slope_collider(mut commands: Commands) {
     // X = horizontal, Y = height of slope at that X
     // Tune these values to match your image visually
@@ -234,10 +235,13 @@ fn spawn_slope_collider(mut commands: Commands) {
 pub fn setup_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Sprite {
-            image: asset_server.load("player.png"),
+            image: asset_server
+                .load_with_settings("player.png", |settings: &mut ImageLoaderSettings| {
+                    settings.sampler = ImageSampler::nearest()
+                }),
             ..Default::default()
         },
-        Transform::from_xyz(-900., -525., 0.1).with_scale(Vec3::splat(0.15)),
+        Transform::from_xyz(-900., -525., 0.1).with_scale(Vec3::splat(1.)),
         Player,
     ));
 }
@@ -248,7 +252,7 @@ fn move_player(
     mut player_transform: Single<&mut Transform, With<Player>>,
     time: Res<Time>,
 ) {
-    let speed: f32 = 100.0;
+    let speed: f32 = 50.0;
     let mut direction_x = 0.0;
     let mut direction_y = 0.0;
 
